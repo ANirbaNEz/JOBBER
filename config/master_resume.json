@@ -1,0 +1,60 @@
+{
+  "name": "Your Name",
+  "email": "your.email@example.com",
+  "phone": "+1-555-1234",
+  "summary": "Experienced software engineer with expertise in full-stack development, cloud architecture, and team leadership. Passionate about building scalable systems and mentoring engineers.",
+  "skills": [
+    "Python",
+    "JavaScript",
+    "TypeScript",
+    "React",
+    "Node.js",
+    "PostgreSQL",
+    "MongoDB",
+    "AWS",
+    "Docker",
+    "Kubernetes",
+    "GraphQL",
+    "REST APIs",
+    "Git",
+    "Agile",
+    "System Design",
+    "Machine Learning",
+    "SQL",
+    "HTML",
+    "CSS"
+  ],
+  "experience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "Tech Company A",
+      "duration": "2021-Present",
+      "description": "Led architecture and development of microservices platform serving 10M+ users. Mentored team of 5 engineers. Reduced latency by 40% through database optimization and caching strategies."
+    },
+    {
+      "title": "Full-Stack Engineer",
+      "company": "Tech Company B",
+      "duration": "2018-2021",
+      "description": "Developed and maintained web applications using React and Node.js. Implemented CI/CD pipelines using GitHub Actions. Collaborated with product team to deliver features on schedule."
+    },
+    {
+      "title": "Junior Developer",
+      "company": "Tech Company C",
+      "duration": "2016-2018",
+      "description": "Built RESTful APIs and frontend components. Participated in code reviews and contributed to documentation."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "school": "University Name",
+      "year": 2016,
+      "gpa": "3.8"
+    },
+    {
+      "degree": "AWS Certified Solutions Architect",
+      "school": "Amazon Web Services",
+      "year": 2022
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+click==8.1.7
+python-dotenv==1.0.0
+google-generativeai==0.3.0
+playwright==1.40.0
+weasyprint==60.1
+pydantic==2.5.0
+requests==2.31.0
+lxml==4.9.3
+beautifulsoup4==4.12.2
