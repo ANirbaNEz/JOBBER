@@ -1,6 +1,7 @@
 import click
 from pathlib import Path
 import sys
+import os
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -14,6 +15,7 @@ from llm_engine.mock_llm import MockLLM
 from llm_engine.resume_tailor import ResumeTailor
 from llm_engine.cover_letter_generator import CoverLetterGenerator
 from llm_engine.qa_generator import QAGenerator
+from renderer.pdf_renderer import PDFRenderer
 import json
 
 
@@ -230,10 +232,47 @@ def process(job_id):
         click.echo(f"Resume tailored with {len(tailored['skills'])} skills")
         click.echo(f"Cover letter generated ({len(cover_letter)} chars)")
         click.echo(f"Q&A responses generated ({len(qa_responses)} questions)")
-        click.echo(f"\nUse: python cli.py review {job_id}  # to review before submit")
+        click.echo(f"\nUse: python cli.py render {job_id}  # to generate PDF resume")
 
     except Exception as e:
         logger.error(f"Processing failed: {str(e)}")
+        raise click.ClickException(str(e))
+
+
+@cli.command()
+@click.argument('job_id', type=int)
+def render(job_id):
+    """Generate PDF resume from processed job"""
+    try:
+        config = get_config()
+        db = JobberDB(config.db_path)
+
+        job = db.get_job(job_id)
+        if not job:
+            raise click.ClickException(f"Job {job_id} not found")
+
+        cache = db.get_llm_cache(job_id)
+        if not cache:
+            raise click.ClickException(f"Job {job_id} not processed. Run: python cli.py process {job_id}")
+
+        click.echo(f"\n=== Rendering PDF for Job {job_id} ===")
+        click.echo(f"Title: {job['title']}")
+        click.echo(f"Company: {job['company']}\n")
+
+        renderer = PDFRenderer(config.generated_resumes_dir)
+        tailored = cache['tailored_resume']
+
+        pdf_path = renderer.render(tailored, job['company'], job['title'])
+
+        if not pdf_path:
+            raise click.ClickException("Failed to render PDF")
+
+        click.echo(f"PDF generated: {pdf_path}")
+        click.echo(f"Size: {os.path.getsize(pdf_path) / 1024:.1f} KB")
+        click.echo(f"\nUse: python cli.py review {job_id}  # to review all content before submit")
+
+    except Exception as e:
+        logger.error(f"PDF rendering failed: {str(e)}")
         raise click.ClickException(str(e))
 
 
