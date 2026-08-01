@@ -9,6 +9,12 @@ from db.db import JobberDB
 from logging_monitor.logger import setup_logger
 from scraper.indeed_scraper import IndeedScraper
 from scraper.mock_scraper import MockScraper
+from llm_engine.llm_client import GeminiClient
+from llm_engine.mock_llm import MockLLM
+from llm_engine.resume_tailor import ResumeTailor
+from llm_engine.cover_letter_generator import CoverLetterGenerator
+from llm_engine.qa_generator import QAGenerator
+import json
 
 
 logger = setup_logger("jobber", "./logs/jobber.log")
@@ -168,6 +174,66 @@ def scrape(query, location, limit, source):
 
     except Exception as e:
         logger.error(f"Scrape failed: {str(e)}")
+        raise click.ClickException(str(e))
+
+
+@cli.command()
+@click.argument('job_id', type=int)
+def process(job_id):
+    """Process a job: tailor resume, generate cover letter and Q&A"""
+    try:
+        config = get_config()
+        db = JobberDB(config.db_path)
+        master_resume = load_master_resume(config.master_resume_path)
+
+        job = db.get_job(job_id)
+        if not job:
+            raise click.ClickException(f"Job {job_id} not found")
+
+        click.echo(f"\n=== Processing Job {job_id} ===")
+        click.echo(f"Title: {job['title']}")
+        click.echo(f"Company: {job['company']}\n")
+
+        click.echo("(Using mock LLM for testing - provide valid GEMINI_API_KEY in .env for real responses)")
+        llm = MockLLM()
+
+        click.echo("Tailoring resume...")
+        tailor = ResumeTailor(llm)
+        tailored = tailor.tailor(master_resume, job['job_description'])
+
+        if not tailored:
+            raise click.ClickException("Failed to tailor resume")
+
+        click.echo(f"  Selected skills: {', '.join(tailored['skills'][:5])}...")
+
+        click.echo("Generating cover letter...")
+        cover_gen = CoverLetterGenerator(llm)
+        cover_letter = cover_gen.generate(master_resume, job['job_description'], job['company'])
+
+        if not cover_letter:
+            raise click.ClickException("Failed to generate cover letter")
+
+        click.echo(f"  Generated {len(cover_letter)} chars")
+
+        click.echo("Generating Q&A responses...")
+        qa_gen = QAGenerator(llm)
+        qa_responses = qa_gen.generate(job['job_description'], master_resume.summary or "")
+
+        if not qa_responses:
+            raise click.ClickException("Failed to generate Q&A")
+
+        click.echo(f"  Generated {len(qa_responses)} Q&A pairs")
+
+        db.cache_llm_output(job_id, tailored, cover_letter, qa_responses)
+
+        click.echo("\n=== Processing Complete ===")
+        click.echo(f"Resume tailored with {len(tailored['skills'])} skills")
+        click.echo(f"Cover letter generated ({len(cover_letter)} chars)")
+        click.echo(f"Q&A responses generated ({len(qa_responses)} questions)")
+        click.echo(f"\nUse: python cli.py review {job_id}  # to review before submit")
+
+    except Exception as e:
+        logger.error(f"Processing failed: {str(e)}")
         raise click.ClickException(str(e))
 
 
