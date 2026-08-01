@@ -20,6 +20,8 @@ from form_mapper.form_parser import FormParser
 from form_mapper.field_mapper import FieldMapper
 from form_mapper.form_cache import FormCache
 from form_mapper.mock_form import MOCK_FORM_HTML
+from executor.browser_executor import BrowserExecutor
+from executor.email_executor import EmailExecutor
 import json
 
 
@@ -342,6 +344,89 @@ def map_form(job_id, url):
 
     except Exception as e:
         logger.error(f"Form mapping failed: {str(e)}")
+        raise click.ClickException(str(e))
+
+
+@cli.command()
+@click.argument('job_id', type=int)
+@click.option('--headless', is_flag=True, default=True, help='Run browser in headless mode')
+def submit(job_id, headless):
+    """Fill form and submit application"""
+    try:
+        config = get_config()
+        db = JobberDB(config.db_path)
+
+        job = db.get_job(job_id)
+        if not job:
+            raise click.ClickException(f"Job {job_id} not found")
+
+        form_cache = db.get_form_mapping(job_id)
+        if not form_cache:
+            raise click.ClickException(f"Job {job_id} not form-mapped. Run: python cli.py map-form {job_id}")
+
+        llm_cache = db.get_llm_cache(job_id)
+        if not llm_cache:
+            raise click.ClickException(f"Job {job_id} not processed. Run: python cli.py process {job_id}")
+
+        click.echo(f"\n=== Submitting Job {job_id} ===")
+        click.echo(f"Title: {job['title']}")
+        click.echo(f"Company: {job['company']}")
+        click.echo(f"URL: {job['url']}\n")
+
+        field_mapping = form_cache['field_mapping']
+        pdf_path = None
+
+        for job_pdf in os.listdir(config.generated_resumes_dir):
+            if str(job_id) in job_pdf or job['company'].replace(" ", "") in job_pdf:
+                pdf_path = os.path.join(config.generated_resumes_dir, job_pdf)
+                break
+
+        if not pdf_path:
+            click.echo("Warning: No PDF resume found. Will attempt to fill text fields only.")
+
+        if job['app_type'] == 'email':
+            click.echo("Application type: EMAIL")
+            app_email = job.get('company_email', '')
+            if not app_email:
+                raise click.ClickException("Company email not found in job details")
+
+            executor = EmailExecutor(
+                config.smtp_server,
+                config.smtp_port,
+                config.smtp_email,
+                config.smtp_password
+            )
+
+            subject = f"Application: {job['title']} at {job['company']}"
+            body = llm_cache['cover_letter']
+
+            if executor.execute(app_email, subject, body, pdf_path):
+                click.echo(f"Successfully sent email to {app_email}")
+                db.update_application_status(job_id, "submitted", "Email sent via SMTP")
+            else:
+                raise click.ClickException(f"Failed to send email: {executor.error_message}")
+
+        else:
+            click.echo("Application type: FORM (Browser)")
+            executor = BrowserExecutor(headless=headless, timeout=config.browser_timeout)
+
+            if executor.execute(job['url'], field_mapping, pdf_path):
+                click.echo("Successfully submitted application")
+                db.update_application_status(job_id, "submitted", "Form submitted via browser")
+            else:
+                error = executor.error_message
+                if error == "CAPTCHA_REQUIRES_USER_INTERVENTION":
+                    click.echo("CAPTCHA detected - user intervention required")
+                    db.update_application_status(job_id, "captcha_required", "User must solve CAPTCHA and submit manually")
+                    raise click.ClickException(error)
+                else:
+                    raise click.ClickException(f"Failed to submit: {error}")
+
+        click.echo(f"\nApplication status: SUBMITTED")
+        click.echo(f"Timestamp: {db.get_application(job_id)['submitted_at']}")
+
+    except Exception as e:
+        logger.error(f"Submission failed: {str(e)}")
         raise click.ClickException(str(e))
 
 
