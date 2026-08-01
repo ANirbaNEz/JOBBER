@@ -16,6 +16,10 @@ from llm_engine.resume_tailor import ResumeTailor
 from llm_engine.cover_letter_generator import CoverLetterGenerator
 from llm_engine.qa_generator import QAGenerator
 from renderer.pdf_renderer import PDFRenderer
+from form_mapper.form_parser import FormParser
+from form_mapper.field_mapper import FieldMapper
+from form_mapper.form_cache import FormCache
+from form_mapper.mock_form import MOCK_FORM_HTML
 import json
 
 
@@ -269,10 +273,75 @@ def render(job_id):
 
         click.echo(f"PDF generated: {pdf_path}")
         click.echo(f"Size: {os.path.getsize(pdf_path) / 1024:.1f} KB")
-        click.echo(f"\nUse: python cli.py review {job_id}  # to review all content before submit")
+        click.echo(f"\nUse: python cli.py map-form {job_id}  # to parse and map application form")
 
     except Exception as e:
         logger.error(f"PDF rendering failed: {str(e)}")
+        raise click.ClickException(str(e))
+
+
+@cli.command('map-form')
+@click.argument('job_id', type=int)
+@click.option('--url', default='', help='Application form URL (optional)')
+def map_form(job_id, url):
+    """Parse form and map resume data to form fields"""
+    try:
+        config = get_config()
+        db = JobberDB(config.db_path)
+
+        job = db.get_job(job_id)
+        if not job:
+            raise click.ClickException(f"Job {job_id} not found")
+
+        cache_obj = db.get_form_mapping(job_id)
+        if cache_obj:
+            click.echo(f"Form already cached for job {job_id}")
+            click.echo(f"Fields: {len(cache_obj['form_fields'])} | Mapped: {len(cache_obj['field_mapping'])}")
+            return
+
+        cache = db.get_llm_cache(job_id)
+        if not cache:
+            raise click.ClickException(f"Job {job_id} not processed. Run: python cli.py process {job_id}")
+
+        click.echo(f"\n=== Mapping Form for Job {job_id} ===")
+        click.echo(f"Title: {job['title']}")
+        click.echo(f"Company: {job['company']}\n")
+
+        parser = FormParser()
+        mapper = FieldMapper()
+
+        if url:
+            click.echo(f"Parsing form from URL: {url}")
+            form_data = parser.parse_form_url(url)
+        else:
+            click.echo("Using mock form for testing")
+            form_data = parser.parse_form_html(MOCK_FORM_HTML)
+
+        if not form_data:
+            raise click.ClickException("Failed to parse form")
+
+        click.echo(f"Parsed {form_data['field_count']} form fields")
+        click.echo(f"Required fields: {form_data['required_count']}")
+        click.echo(f"CAPTCHA detected: {form_data['captcha_detected']}\n")
+
+        tailored = cache['tailored_resume']
+        field_mapping = mapper.map_fields(form_data['fields'], tailored)
+
+        click.echo(f"Mapped {len(field_mapping)}/{form_data['field_count']} fields:\n")
+        for field_name, value in list(field_mapping.items())[:5]:
+            preview = value[:40] + "..." if len(value) > 40 else value
+            click.echo(f"  {field_name}: {preview}")
+
+        if len(field_mapping) > 5:
+            click.echo(f"  ... and {len(field_mapping) - 5} more")
+
+        db.cache_form_mapping(job_id, form_data['fields'], field_mapping)
+
+        click.echo(f"\nForm mapping cached for job {job_id}")
+        click.echo(f"Use: python cli.py submit {job_id}  # to fill form and submit")
+
+    except Exception as e:
+        logger.error(f"Form mapping failed: {str(e)}")
         raise click.ClickException(str(e))
 
 
