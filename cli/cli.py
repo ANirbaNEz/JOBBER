@@ -7,6 +7,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from config.config import get_config, load_master_resume, validate_master_resume
 from db.db import JobberDB
 from logging_monitor.logger import setup_logger
+from scraper.indeed_scraper import IndeedScraper
+from scraper.mock_scraper import MockScraper
 
 
 logger = setup_logger("jobber", "./logs/jobber.log")
@@ -112,6 +114,60 @@ def logs():
 
     except Exception as e:
         logger.error(f"Failed to fetch logs: {str(e)}")
+        raise click.ClickException(str(e))
+
+
+@cli.command()
+@click.option('--query', prompt='Job search query', help='e.g., "Python Engineer", "Data Scientist"')
+@click.option('--location', default='', help='Job location (optional)')
+@click.option('--limit', default=10, help='Number of jobs to scrape')
+@click.option('--source', default='mock', type=click.Choice(['mock', 'indeed']), help='Job source')
+def scrape(query, location, limit, source):
+    """Scrape jobs from job boards"""
+    try:
+        config = get_config()
+        db = JobberDB(config.db_path)
+
+        click.echo(f"\n=== Scraping {source.upper()} for '{query}' ===\n")
+
+        if source == 'mock':
+            scraper = MockScraper()
+            jobs = scraper.scrape(query, location=location, limit=limit)
+        elif source == 'indeed':
+            scraper = IndeedScraper()
+            jobs = scraper.scrape(query, location=location, limit=limit)
+
+        if not jobs:
+            click.echo("No jobs found.")
+            return
+
+        dedups = 0
+        added = 0
+
+        for job in jobs:
+            if db.is_duplicate(job.url):
+                dedups += 1
+                logger.info(f"Duplicate: {job.title}")
+                continue
+
+            job_id = db.add_job(
+                title=job.title,
+                company=job.company,
+                url=job.url,
+                jd=job.job_description,
+                required_skills=job.required_skills,
+                app_type=job.app_type,
+                source=job.source
+            )
+            added += 1
+            click.echo(f"[{job_id}] {job.title} @ {job.company}")
+            click.echo(f"    {job.url}\n")
+
+        click.echo(f"\n=== Scrape Complete ===")
+        click.echo(f"Added: {added} | Duplicates: {dedups} | Total scraped: {len(jobs)}")
+
+    except Exception as e:
+        logger.error(f"Scrape failed: {str(e)}")
         raise click.ClickException(str(e))
 
 
