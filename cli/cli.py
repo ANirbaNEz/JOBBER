@@ -10,6 +10,7 @@ from db.db import JobberDB
 from logging_monitor.logger import setup_logger
 from scraper.indeed_scraper import IndeedScraper
 from scraper.mock_scraper import MockScraper
+from scraper.naukri_scraper import NaukriScraper
 from llm_engine.llm_client import GeminiClient
 from llm_engine.mock_llm import MockLLM
 from llm_engine.resume_tailor import ResumeTailor
@@ -140,7 +141,7 @@ def logs():
 @click.option('--query', prompt='Job search query', help='e.g., "Python Engineer", "Data Scientist"')
 @click.option('--location', default='', help='Job location (optional)')
 @click.option('--limit', default=10, help='Number of jobs to scrape')
-@click.option('--source', default='mock', type=click.Choice(['mock', 'indeed']), help='Job source')
+@click.option('--source', default='naukri', type=click.Choice(['mock', 'indeed', 'naukri']), help='Job source')
 def scrape(query, location, limit, source):
     """Scrape jobs from job boards"""
     try:
@@ -154,6 +155,9 @@ def scrape(query, location, limit, source):
             jobs = scraper.scrape(query, location=location, limit=limit)
         elif source == 'indeed':
             scraper = IndeedScraper()
+            jobs = scraper.scrape(query, location=location, limit=limit)
+        elif source == 'naukri':
+            scraper = NaukriScraper()
             jobs = scraper.scrape(query, location=location, limit=limit)
 
         if not jobs:
