@@ -22,6 +22,11 @@ from form_mapper.form_cache import FormCache
 from form_mapper.mock_form import MOCK_FORM_HTML
 from executor.browser_executor import BrowserExecutor
 from executor.email_executor import EmailExecutor
+from cli.review_ui import (
+    print_job_header, print_resume_section, print_cover_letter,
+    print_qa_responses, print_form_mapping, prompt_review_approval,
+    print_submission_result, print_summary
+)
 import json
 
 
@@ -427,6 +432,58 @@ def submit(job_id, headless):
 
     except Exception as e:
         logger.error(f"Submission failed: {str(e)}")
+        raise click.ClickException(str(e))
+
+
+@cli.command()
+@click.argument('job_id', type=int)
+def review(job_id):
+    """Review all content before submission (HITL approval)"""
+    try:
+        config = get_config()
+        db = JobberDB(config.db_path)
+
+        job = db.get_job(job_id)
+        if not job:
+            raise click.ClickException(f"Job {job_id} not found")
+
+        llm_cache = db.get_llm_cache(job_id)
+        if not llm_cache:
+            raise click.ClickException(f"Job {job_id} not processed. Run: python cli.py process {job_id}")
+
+        form_cache = db.get_form_mapping(job_id)
+        if not form_cache:
+            raise click.ClickException(f"Job {job_id} not form-mapped. Run: python cli.py map-form {job_id}")
+
+        print_job_header(job)
+        print_resume_section(llm_cache['tailored_resume'])
+        print_cover_letter(llm_cache['cover_letter'])
+        print_qa_responses(llm_cache['qa_responses'])
+
+        if form_cache:
+            print_form_mapping(form_cache['field_mapping'], form_cache['form_fields'])
+
+        if prompt_review_approval():
+            click.echo("\nProceeding with submission...")
+            click.echo(f"Run: python cli.py submit {job_id}")
+        else:
+            click.echo("\nApplication review cancelled.")
+
+    except Exception as e:
+        logger.error(f"Review failed: {str(e)}")
+        raise click.ClickException(str(e))
+
+
+@cli.command()
+def summary():
+    """Show overall application summary"""
+    try:
+        config = get_config()
+        db = JobberDB(config.db_path)
+        stats = db.get_stats()
+        print_summary(stats)
+    except Exception as e:
+        logger.error(f"Summary failed: {str(e)}")
         raise click.ClickException(str(e))
 
 
