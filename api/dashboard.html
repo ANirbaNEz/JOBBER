@@ -402,6 +402,16 @@
 
                 <button onclick="scrapeJobs()">Search & Scrape</button>
 
+                <h2 style="margin-top: 32px;">Master Resume</h2>
+
+                <div class="control-group">
+                    <label>Upload Resume (JSON)</label>
+                    <input type="file" id="resumeFile" accept=".json" style="padding: 8px;">
+                </div>
+
+                <button style="background: #28a745; margin-bottom: 12px;" onclick="uploadResume()">Upload Resume</button>
+                <button class="secondary" onclick="downloadTemplate()">Download Template</button>
+
                 <h2 style="margin-top: 32px;">Status</h2>
                 <div class="stat-card" style="margin-top: 12px; text-align: left;">
                     <div class="stat-value" id="totalJobs">0</div>
@@ -641,6 +651,78 @@
             document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
             document.getElementById(tabName).classList.add('active');
             event.target.classList.add('active');
+        }
+
+        async function uploadResume() {
+            const fileInput = document.getElementById('resumeFile');
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Please select a resume file');
+                return;
+            }
+
+            const file = fileInput.files[0];
+
+            try {
+                const text = await file.text();
+                const resume = JSON.parse(text);
+
+                const response = await fetch(`${API_BASE}/upload-resume`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(resume)
+                });
+
+                if (response.ok) {
+                    alert('Resume uploaded successfully!');
+                    fileInput.value = '';
+                    loadStatus();
+                } else {
+                    alert('Error uploading resume');
+                }
+            } catch (e) {
+                alert('Error: ' + e.message + '\n\nMake sure the file is valid JSON');
+            }
+        }
+
+        function downloadTemplate() {
+            const template = {
+                "name": "Your Full Name",
+                "email": "your.email@gmail.com",
+                "phone": "+1-555-1234",
+                "summary": "A brief professional summary (2-3 sentences)",
+                "skills": [
+                    "Python",
+                    "PostgreSQL",
+                    "REST APIs",
+                    "Docker",
+                    "Git",
+                    "System Design",
+                    "Agile"
+                ],
+                "experience": [
+                    {
+                        "title": "Senior Software Engineer",
+                        "company": "TechCorp Inc",
+                        "duration": "2020-Present",
+                        "description": "Led backend development for microservices architecture..."
+                    }
+                ],
+                "education": [
+                    {
+                        "degree": "Bachelor of Science in Computer Science",
+                        "school": "University Name",
+                        "year": "2018"
+                    }
+                ]
+            };
+
+            const blob = new Blob([JSON.stringify(template, null, 2)], {type: 'application/json'});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'resume_template.json';
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         // Load initial data

@@ -293,5 +293,36 @@ def dashboard():
     return send_file(str(dashboard_path), mimetype='text/html')
 
 
+@app.route('/api/upload-resume', methods=['POST'])
+def upload_resume():
+    """Upload and save master resume"""
+    try:
+        resume_data = request.json
+
+        # Validate required fields
+        if not resume_data.get('name') or not resume_data.get('email'):
+            return jsonify({"error": "Name and email are required"}), 400
+
+        # Save to master_resume.json
+        resume_path = Path(config.master_resume_path)
+        with open(resume_path, 'w') as f:
+            json.dump(resume_data, f, indent=2)
+
+        # Reload config
+        global master_resume
+        master_resume = load_master_resume(str(resume_path))
+
+        logger.info(f"Master resume updated: {resume_data.get('name')}")
+        return jsonify({
+            "status": "success",
+            "name": resume_data.get('name'),
+            "email": resume_data.get('email')
+        })
+
+    except Exception as e:
+        logger.error(f"Resume upload failed: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000, host='127.0.0.1')
