@@ -2,6 +2,7 @@ from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 import sys
 from pathlib import Path
+import tempfile
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -14,6 +15,7 @@ from llm_engine.mock_llm import MockLLM
 from llm_engine.resume_tailor import ResumeTailor
 from llm_engine.cover_letter_generator import CoverLetterGenerator
 from llm_engine.qa_generator import QAGenerator
+from llm_engine.resume_analyzer import ResumeAnalyzer
 from renderer.pdf_renderer import PDFRenderer
 from form_mapper.form_parser import FormParser
 from form_mapper.field_mapper import FieldMapper
@@ -295,7 +297,7 @@ def dashboard():
 
 @app.route('/api/upload-resume', methods=['POST'])
 def upload_resume():
-    """Upload and save master resume"""
+    """Upload and save master resume (JSON)"""
     try:
         resume_data = request.json
 
@@ -321,6 +323,62 @@ def upload_resume():
 
     except Exception as e:
         logger.error(f"Resume upload failed: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/analyze-resume', methods=['POST'])
+def analyze_resume():
+    """Analyze uploaded resume file and extract structured data"""
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file provided"}), 400
+
+        file = request.files['file']
+        if not file.filename:
+            return jsonify({"error": "No file selected"}), 400
+
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename).suffix) as tmp:
+            file.save(tmp.name)
+            tmp_path = tmp.name
+
+        try:
+            # Use LLM for analysis
+            llm = MockLLM()
+            analyzer = ResumeAnalyzer(llm)
+
+            # Process file
+            resume_data = analyzer.process_file(tmp_path)
+
+            if not resume_data:
+                return jsonify({"error": "Could not analyze resume. Try a different format or clearer document."}), 400
+
+            # Save to master_resume.json
+            resume_path = Path(config.master_resume_path)
+            with open(resume_path, 'w') as f:
+                json.dump(resume_data, f, indent=2)
+
+            # Reload
+            global master_resume
+            master_resume = load_master_resume(str(resume_path))
+
+            logger.info(f"Resume analyzed and saved: {resume_data.get('name')}")
+            return jsonify({
+                "status": "success",
+                "name": resume_data.get('name'),
+                "email": resume_data.get('email'),
+                "skills_count": len(resume_data.get('skills', []))
+            })
+
+        finally:
+            # Cleanup temp file
+            try:
+                os.remove(tmp_path)
+            except:
+                pass
+
+    except Exception as e:
+        logger.error(f"Resume analysis failed: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
 

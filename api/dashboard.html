@@ -405,12 +405,13 @@
                 <h2 style="margin-top: 32px;">Master Resume</h2>
 
                 <div class="control-group">
-                    <label>Upload Resume (JSON)</label>
-                    <input type="file" id="resumeFile" accept=".json" style="padding: 8px;">
+                    <label>Upload Resume File</label>
+                    <input type="file" id="resumeFile" accept=".pdf,.docx,.txt,.doc" style="padding: 8px;">
+                    <small style="color: #999; font-size: 11px; display: block; margin-top: 4px;">PDF, DOCX, DOC, or TXT</small>
                 </div>
 
-                <button style="background: #28a745; margin-bottom: 12px;" onclick="uploadResume()">Upload Resume</button>
-                <button class="secondary" onclick="downloadTemplate()">Download Template</button>
+                <button style="background: #28a745;" onclick="uploadResume()">Analyze & Upload</button>
+                <div id="uploadStatus" style="margin-top: 12px; color: #666; font-size: 12px;"></div>
 
                 <h2 style="margin-top: 32px;">Status</h2>
                 <div class="stat-card" style="margin-top: 12px; text-align: left;">
@@ -655,74 +656,40 @@
 
         async function uploadResume() {
             const fileInput = document.getElementById('resumeFile');
+            const statusDiv = document.getElementById('uploadStatus');
+
             if (!fileInput.files || fileInput.files.length === 0) {
-                alert('Please select a resume file');
+                alert('Please select a resume file (PDF, DOCX, DOC, or TXT)');
                 return;
             }
 
             const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            statusDiv.textContent = 'Analyzing resume...';
 
             try {
-                const text = await file.text();
-                const resume = JSON.parse(text);
-
-                const response = await fetch(`${API_BASE}/upload-resume`, {
+                const response = await fetch(`${API_BASE}/analyze-resume`, {
                     method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(resume)
+                    body: formData
                 });
 
+                const data = await response.json();
+
                 if (response.ok) {
-                    alert('Resume uploaded successfully!');
+                    statusDiv.textContent = `✓ Resume loaded: ${data.name}`;
                     fileInput.value = '';
                     loadStatus();
+                    setTimeout(() => {
+                        statusDiv.textContent = '';
+                    }, 3000);
                 } else {
-                    alert('Error uploading resume');
+                    statusDiv.textContent = `Error: ${data.error}`;
                 }
             } catch (e) {
-                alert('Error: ' + e.message + '\n\nMake sure the file is valid JSON');
+                statusDiv.textContent = `Error: ${e.message}`;
             }
-        }
-
-        function downloadTemplate() {
-            const template = {
-                "name": "Your Full Name",
-                "email": "your.email@gmail.com",
-                "phone": "+1-555-1234",
-                "summary": "A brief professional summary (2-3 sentences)",
-                "skills": [
-                    "Python",
-                    "PostgreSQL",
-                    "REST APIs",
-                    "Docker",
-                    "Git",
-                    "System Design",
-                    "Agile"
-                ],
-                "experience": [
-                    {
-                        "title": "Senior Software Engineer",
-                        "company": "TechCorp Inc",
-                        "duration": "2020-Present",
-                        "description": "Led backend development for microservices architecture..."
-                    }
-                ],
-                "education": [
-                    {
-                        "degree": "Bachelor of Science in Computer Science",
-                        "school": "University Name",
-                        "year": "2018"
-                    }
-                ]
-            };
-
-            const blob = new Blob([JSON.stringify(template, null, 2)], {type: 'application/json'});
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'resume_template.json';
-            a.click();
-            URL.revokeObjectURL(url);
         }
 
         // Load initial data
