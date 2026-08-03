@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JOBBER - Job Application Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .sidebar {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            height: fit-content;
+        }
+
+        .sidebar h2 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: #666;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+
+        input[type="text"]:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+            margin-top: 8px;
+        }
+
+        button.secondary:hover {
+            background: #e0e0e0;
+        }
+
+        .content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 12px;
+        }
+
+        .tab-button {
+            padding: 10px 16px;
+            background: none;
+            color: #666;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            width: auto;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .jobs-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .jobs-table th {
+            background: #f9f9f9;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #333;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .jobs-table td {
+            padding: 12px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .jobs-table tr:hover {
+            background: #f9f9f9;
+        }
+
+        .job-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .company-name {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-processing {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-submitted {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-buttons button {
+            width: auto;
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+
+        .review-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .review-modal.active {
+            display: flex;
+        }
+
+        .review-modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 900px;
+            max-height: 90vh;
+            overflow-y: auto;
+            padding: 32px;
+            width: 90%;
+        }
+
+        .review-section {
+            margin-bottom: 32px;
+        }
+
+        .review-section h3 {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .review-content {
+            color: #666;
+            line-height: 1.6;
+        }
+
+        .resume-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .resume-item {
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .resume-label {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .form-fields {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .form-field {
+            padding: 8px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            border-left: 3px solid #667eea;
+            font-size: 12px;
+        }
+
+        .form-field.unmapped {
+            border-left-color: #ffc107;
+        }
+
+        .review-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 32px;
+            padding-top: 32px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #f0f0f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>JOBBER</h1>
+            <p class="subtitle">AI-Powered Job Application Assistant</p>
+        </header>
+
+        <div class="main-grid">
+            <div class="sidebar">
+                <h2>Scrape Jobs</h2>
+
+                <div class="control-group">
+                    <label>Search Query</label>
+                    <input type="text" id="searchQuery" placeholder="e.g., Python Developer" value="Python Developer">
+                </div>
+
+                <div class="control-group">
+                    <label>Source</label>
+                    <select id="scrapeSource">
+                        <option value="naukri">Naukri.com (India)</option>
+                        <option value="internshala">Internshala (India)</option>
+                        <option value="mock">Mock (Test Data)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label>Limit</label>
+                    <input type="text" id="scrapeLimit" placeholder="10" value="5">
+                </div>
+
+                <button onclick="scrapeJobs()">Search & Scrape</button>
+
+                <h2 style="margin-top: 32px;">Status</h2>
+                <div class="stat-card" style="margin-top: 12px; text-align: left;">
+                    <div class="stat-value" id="totalJobs">0</div>
+                    <div class="stat-label">Total Jobs</div>
+                </div>
+                <div class="stat-card" style="margin-top: 8px; text-align: left;">
+                    <div class="stat-value" id="submittedApps">0</div>
+                    <div class="stat-label">Submitted</div>
+                </div>
+            </div>
+
+            <div class="content">
+                <div class="tabs">
+                    <button class="tab-button active" onclick="switchTab('jobs')">Jobs</button>
+                    <button class="tab-button" onclick="switchTab('workflow')">Workflow</button>
+                    <button class="tab-button" onclick="switchTab('stats')">Statistics</button>
+                </div>
+
+                <div id="jobs" class="tab-content active">
+                    <table class="jobs-table">
+                        <thead>
+                            <tr>
+                                <th>Job Title</th>
+                                <th>Company</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobsList"></tbody>
+                    </table>
+                </div>
+
+                <div id="workflow" class="tab-content">
+                    <div class="review-section">
+                        <h3>Application Workflow</h3>
+                        <p class="review-content">
+                            Select a job from the Jobs tab to start the workflow:
+                        </p>
+                        <ol style="margin-top: 12px; margin-left: 20px; color: #666;">
+                            <li>Process job (tailor resume, generate cover letter)</li>
+                            <li>Render PDF resume</li>
+                            <li>Map form fields</li>
+                            <li>Review all content</li>
+                            <li>Approve & submit application</li>
+                        </ol>
+                    </div>
+                </div>
+
+                <div id="stats" class="tab-content">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-value" id="statTotalJobs">0</div>
+                            <div class="stat-label">Jobs Discovered</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statApplications">0</div>
+                            <div class="stat-label">Total Applications</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statSubmitted">0</div>
+                            <div class="stat-label">Submitted</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value" id="statPending">0</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="reviewModal" class="review-modal">
+        <div class="review-modal-content">
+            <h2 id="reviewTitle"></h2>
+
+            <div class="review-section">
+                <h3>Job Details</h3>
+                <div class="review-content" id="reviewJobDetails"></div>
+            </div>
+
+            <div class="review-section">
+                <h3>Tailored Resume</h3>
+                <div class="resume-grid" id="reviewResume"></div>
+            </div>
+
+            <div class="review-section">
+                <h3>Cover Letter</h3>
+                <div class="review-content" id="reviewCoverLetter"></div>
+            </div>
+
+            <div class="review-section">
+                <h3>Form Fields</h3>
+                <div class="form-fields" id="reviewFormFields"></div>
+            </div>
+
+            <div class="review-actions">
+                <button style="flex: 1; background: #28a745;" onclick="approveApplication()">Approve & Submit</button>
+                <button style="flex: 1; background: #dc3545;" onclick="closeReview()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let currentJobId = null;
+
+        async function scrapeJobs() {
+            const query = document.getElementById('searchQuery').value;
+            const source = document.getElementById('scrapeSource').value;
+            const limit = parseInt(document.getElementById('scrapeLimit').value) || 10;
+
+            try {
+                const response = await fetch(`${API_BASE}/scrape`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({query, source, limit})
+                });
+
+                const data = await response.json();
+                alert(`Added ${data.added} jobs, ${data.dedups} duplicates skipped`);
+                loadJobs();
+                loadStatus();
+            } catch (e) {
+                alert('Error scraping: ' + e.message);
+            }
+        }
+
+        async function loadJobs() {
+            try {
+                const response = await fetch(`${API_BASE}/jobs`);
+                const jobs = await response.json();
+
+                const tbody = document.getElementById('jobsList');
+                tbody.innerHTML = jobs.map(job => `
+                    <tr>
+                        <td><div class="job-title">${job.title}</div></td>
+                        <td><div class="company-name">${job.company}</div></td>
+                        <td><span class="status-badge status-pending">New</span></td>
+                        <td class="action-buttons">
+                            <button onclick="startWorkflow(${job.job_id})">Start</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                console.error('Error loading jobs:', e);
+            }
+        }
+
+        async function startWorkflow(jobId) {
+            currentJobId = jobId;
+            try {
+                // Process job
+                await fetch(`${API_BASE}/process/${jobId}`, {method: 'POST'});
+                // Render PDF
+                await fetch(`${API_BASE}/render/${jobId}`, {method: 'POST'});
+                // Map form
+                await fetch(`${API_BASE}/map-form/${jobId}`, {method: 'POST'});
+                // Load review
+                showReview(jobId);
+            } catch (e) {
+                alert('Error: ' + e.message);
+            }
+        }
+
+        async function showReview(jobId) {
+            try {
+                const response = await fetch(`${API_BASE}/review/${jobId}`);
+                const data = await response.json();
+
+                document.getElementById('reviewTitle').textContent = `${data.job.title} at ${data.job.company}`;
+                document.getElementById('reviewJobDetails').innerHTML = `
+                    <p><strong>URL:</strong> <a href="${data.job.url}" target="_blank">${data.job.url}</a></p>
+                    <p><strong>Description:</strong> ${data.job.job_description}</p>
+                `;
+
+                if (data.tailored_resume) {
+                    document.getElementById('reviewResume').innerHTML = `
+                        <div class="resume-item"><span class="resume-label">Skills:</span> ${data.tailored_resume.skills.join(', ')}</div>
+                        <div class="resume-item"><span class="resume-label">Summary:</span> ${data.tailored_resume.summary}</div>
+                    `;
+                }
+
+                if (data.cover_letter) {
+                    document.getElementById('reviewCoverLetter').textContent = data.cover_letter;
+                }
+
+                if (data.form_fields) {
+                    document.getElementById('reviewFormFields').innerHTML = data.form_fields.map(f => {
+                        const mapped = data.field_mapping[f.name];
+                        return `
+                            <div class="form-field ${mapped ? '' : 'unmapped'}">
+                                <strong>${f.name}</strong><br>
+                                ${mapped ? `✓ ${mapped.substring(0, 30)}...` : '⚠ Not mapped'}
+                            </div>
+                        `;
+                    }).join('');
+                }
+
+                document.getElementById('reviewModal').classList.add('active');
+            } catch (e) {
+                alert('Error loading review: ' + e.message);
+            }
+        }
+
+        function approveApplication() {
+            alert('Application approved and submitted!');
+            closeReview();
+            loadJobs();
+            loadStatus();
+        }
+
+        function closeReview() {
+            document.getElementById('reviewModal').classList.remove('active');
+            currentJobId = null;
+        }
+
+        async function loadStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`);
+                const stats = await response.json();
+
+                document.getElementById('totalJobs').textContent = stats.total_jobs_discovered;
+                document.getElementById('submittedApps').textContent = stats.submitted_applications;
+
+                document.getElementById('statTotalJobs').textContent = stats.total_jobs_discovered;
+                document.getElementById('statApplications').textContent = stats.total_applications;
+                document.getElementById('statSubmitted').textContent = stats.submitted_applications;
+                document.getElementById('statPending').textContent = stats.pending_applications;
+            } catch (e) {
+                console.error('Error loading status:', e);
+            }
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Load initial data
+        loadJobs();
+        loadStatus();
+    </script>
+</body>
+</html>
