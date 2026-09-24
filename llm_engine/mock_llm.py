@@ -9,13 +9,46 @@ class MockLLM:
 
     def generate(self, prompt: str, max_tokens: int = 2048) -> Optional[str]:
         """Return a mock response."""
-        if "resume" in prompt.lower() and "tailor" in prompt.lower():
+        prompt_lower = prompt.lower()
+
+        if "analyze" in prompt_lower and "resume" in prompt_lower and "extract" in prompt_lower:
+            # Resume analysis - extract structured data
+            return """{
+  "name": "John Smith",
+  "email": "john.smith@email.com",
+  "phone": "+1-555-0123",
+  "summary": "Senior Software Engineer with 6+ years of experience building scalable backend systems and leading cross-functional teams.",
+  "skills": ["Python", "FastAPI", "PostgreSQL", "REST APIs", "Docker", "Kubernetes", "Git", "System Design", "AWS", "Agile"],
+  "experience": [
+    {
+      "title": "Senior Software Engineer",
+      "company": "Tech Corp",
+      "duration": "2021-Present",
+      "description": "Led architecture and development of microservices platform. Mentored team of engineers. Reduced API latency by 40%."
+    },
+    {
+      "title": "Software Engineer",
+      "company": "StartUp Inc",
+      "duration": "2019-2021",
+      "description": "Built REST APIs and database schemas. Implemented CI/CD pipelines. Optimized database queries for performance."
+    }
+  ],
+  "education": [
+    {
+      "degree": "Bachelor of Science in Computer Science",
+      "school": "State University",
+      "year": "2019"
+    }
+  ]
+}"""
+
+        elif "resume" in prompt_lower and "tailor" in prompt_lower:
             return """{"name": "Your Name", "email": "your.email@example.com", "phone": "+1-555-1234", "summary": "Experienced Python engineer with strong backend development skills and proven ability to build scalable systems.", "skills": ["Python", "FastAPI", "PostgreSQL", "REST APIs", "Docker", "Git", "System Design", "Agile"], "experience": [{"title": "Senior Software Engineer", "company": "Tech Company A", "duration": "2021-Present", "description": "Led architecture and development of microservices platform serving 10M+ users. Mentored team of 5 engineers."}], "education": [{"degree": "Bachelor of Science in Computer Science", "school": "University Name", "year": 2016}]}"""
 
-        elif "cover letter" in prompt.lower():
+        elif "cover letter" in prompt_lower:
             return """I am a Senior Python Engineer with 5+ years of experience building scalable backend systems. I'm excited about this opportunity because your company is at the forefront of modern web technologies, and I'm particularly interested in your microservices architecture. My experience with FastAPI, PostgreSQL, and system design aligns perfectly with your team's needs, and I'm eager to contribute to building products that impact millions of users. I would welcome the opportunity to discuss how my expertise can contribute to your team's success."""
 
-        elif "question" in prompt.lower() and "answer" in prompt.lower():
+        elif "question" in prompt_lower and "answer" in prompt_lower:
             return """[
 {"question": "Why are you interested in this position?", "answer": "I'm genuinely excited about this role because of your company's innovative approach to backend engineering. The tech stack you're using (FastAPI, PostgreSQL) aligns perfectly with my expertise, and I'm impressed by your commitment to scalable, maintainable code."},
 {"question": "What relevant experience do you have?", "answer": "I have 5+ years as a Senior Software Engineer, where I architected and led microservices platforms handling 10M+ users. I've built REST APIs, optimized database queries, and mentored teams of engineers in Agile environments."},
