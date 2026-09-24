@@ -389,8 +389,8 @@
                 <div class="control-group">
                     <label>Source</label>
                     <select id="scrapeSource">
-                        <option value="naukri">Naukri.com (India)</option>
-                        <option value="internshala">Internshala (India)</option>
+                        <option value="internshala" selected>Internshala (India)</option>
+                        <option value="naukri">Naukri.com (often blocks bots)</option>
                         <option value="mock">Mock (Test Data)</option>
                     </select>
                 </div>
@@ -524,6 +524,11 @@
             const query = document.getElementById('searchQuery').value;
             const source = document.getElementById('scrapeSource').value;
             const limit = parseInt(document.getElementById('scrapeLimit').value) || 10;
+            const btn = event.target;
+            const originalText = btn.textContent;
+
+            btn.disabled = true;
+            btn.textContent = 'Scraping... (may take 10-30s)';
 
             try {
                 const response = await fetch(`${API_BASE}/scrape`, {
@@ -533,11 +538,24 @@
                 });
 
                 const data = await response.json();
-                alert(`Added ${data.added} jobs, ${data.dedups} duplicates skipped`);
+
+                if (!response.ok) {
+                    alert(`Error: ${data.error || 'Scrape failed'}`);
+                    return;
+                }
+
+                if (data.added === 0 && data.total_scraped === 0) {
+                    alert(`No jobs found on ${source}. This source may be blocking automated access, or try a different search query.`);
+                } else {
+                    alert(`Added ${data.added} new jobs (${data.dedups} duplicates skipped, ${data.total_scraped} total found)`);
+                }
                 loadJobs();
                 loadStatus();
             } catch (e) {
                 alert('Error scraping: ' + e.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         }
 
@@ -657,9 +675,12 @@
         async function uploadResume() {
             const fileInput = document.getElementById('resumeFile');
             const statusDiv = document.getElementById('uploadStatus');
+            const btn = event.target;
+            const originalText = btn.textContent;
 
             if (!fileInput.files || fileInput.files.length === 0) {
-                alert('Please select a resume file (PDF, DOCX, DOC, or TXT)');
+                statusDiv.style.color = '#dc3545';
+                statusDiv.textContent = 'Please select a resume file first (PDF, DOCX, DOC, or TXT)';
                 return;
             }
 
@@ -667,7 +688,10 @@
             const formData = new FormData();
             formData.append('file', file);
 
-            statusDiv.textContent = 'Analyzing resume...';
+            btn.disabled = true;
+            btn.textContent = 'Analyzing... (10-20s)';
+            statusDiv.style.color = '#666';
+            statusDiv.textContent = 'Uploading and analyzing your resume, please wait...';
 
             try {
                 const response = await fetch(`${API_BASE}/analyze-resume`, {
@@ -678,17 +702,25 @@
                 const data = await response.json();
 
                 if (response.ok) {
-                    statusDiv.textContent = `✓ Resume loaded: ${data.name}`;
+                    if (data.warning) {
+                        statusDiv.style.color = '#b8860b';
+                        statusDiv.textContent = `✓ Loaded: ${data.name} (${data.skills_count} skills) — ${data.warning}`;
+                    } else {
+                        statusDiv.style.color = '#28a745';
+                        statusDiv.textContent = `✓ Resume loaded: ${data.name} (${data.skills_count} skills detected)`;
+                    }
                     fileInput.value = '';
                     loadStatus();
-                    setTimeout(() => {
-                        statusDiv.textContent = '';
-                    }, 3000);
                 } else {
+                    statusDiv.style.color = '#dc3545';
                     statusDiv.textContent = `Error: ${data.error}`;
                 }
             } catch (e) {
+                statusDiv.style.color = '#dc3545';
                 statusDiv.textContent = `Error: ${e.message}`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = originalText;
             }
         }
 

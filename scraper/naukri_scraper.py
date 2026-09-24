@@ -41,19 +41,19 @@ class NaukriScraper(ScraperBase):
 
                 time.sleep(2)
 
-                job_cards = page.locator("div.jobsCard").all()
+                job_cards = page.locator(".srp-jobtuple-wrapper").all()
                 logger.info(f"Found {len(job_cards)} job cards")
 
                 for idx, card in enumerate(job_cards[:limit]):
                     try:
                         title_elem = card.locator("a.title").first
-                        title = title_elem.text_content() if title_elem else "Unknown"
+                        title = title_elem.text_content() if title_elem.count() else "Unknown"
 
-                        company_elem = card.locator("a.companyName").first
-                        company = company_elem.text_content() if company_elem else "Unknown"
+                        company_elem = card.locator("a.comp-name").first
+                        company = company_elem.text_content() if company_elem.count() else "Unknown"
 
                         link_elem = card.locator("a.title").first
-                        job_url = link_elem.get_attribute("href") if link_elem else ""
+                        job_url = link_elem.get_attribute("href") if link_elem.count() else ""
 
                         if not job_url:
                             continue
@@ -61,13 +61,16 @@ class NaukriScraper(ScraperBase):
                         if not job_url.startswith("http"):
                             job_url = f"https://www.naukri.com{job_url}"
 
-                        exp_elem = card.locator("span.expwdth").first
-                        experience = exp_elem.text_content() if exp_elem else ""
+                        exp_elem = card.locator(".exp").first
+                        experience = exp_elem.text_content() if exp_elem.count() else ""
 
-                        salary_elem = card.locator("span.sal").first
-                        salary = salary_elem.text_content() if salary_elem else ""
+                        loc_elem = card.locator(".loc").first
+                        location = loc_elem.text_content() if loc_elem.count() else ""
 
-                        job_desc = f"Experience: {experience} | Salary: {salary}"
+                        desc_elem = card.locator(".job-desc").first
+                        description = desc_elem.text_content() if desc_elem.count() else ""
+
+                        job_desc = f"{description.strip()} | Experience: {experience.strip()} | Location: {location.strip()}"
 
                         job = Job(
                             title=title.strip(),

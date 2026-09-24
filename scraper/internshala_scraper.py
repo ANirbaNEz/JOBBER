@@ -41,22 +41,22 @@ class InternShalaScraper(ScraperBase):
                 time.sleep(2)
 
                 # Internshala job listing structure
-                job_cards = page.locator("div.job-card, div.internship_card").all()
+                job_cards = page.locator(".internship_meta").all()
                 logger.info(f"Found {len(job_cards)} job cards")
 
                 for idx, card in enumerate(job_cards[:limit]):
                     try:
                         # Extract title
-                        title_elem = card.locator("h3.heading_3_5, span.job-title").first
-                        title = title_elem.text_content() if title_elem else "Unknown"
+                        title_elem = card.locator("a.job-title-href").first
+                        title = title_elem.text_content() if title_elem.count() else "Unknown"
 
                         # Extract company
-                        company_elem = card.locator("p.company, span.company-name").first
-                        company = company_elem.text_content() if company_elem else "Unknown"
+                        company_elem = card.locator("p.company-name").first
+                        company = company_elem.text_content() if company_elem.count() else "Unknown"
 
                         # Extract URL
-                        link_elem = card.locator("a").first
-                        job_url = link_elem.get_attribute("href") if link_elem else ""
+                        link_elem = card.locator("a.job-title-href").first
+                        job_url = link_elem.get_attribute("href") if link_elem.count() else ""
 
                         if not job_url:
                             continue
@@ -64,9 +64,9 @@ class InternShalaScraper(ScraperBase):
                         if not job_url.startswith("http"):
                             job_url = f"https://internshala.com{job_url}"
 
-                        # Extract details
+                        # Extract details (location, salary, experience row)
                         details = []
-                        detail_elems = card.locator("p.detail").all()
+                        detail_elems = card.locator(".row-1-item").all()
                         for detail_elem in detail_elems[:3]:
                             detail_text = detail_elem.text_content()
                             if detail_text:

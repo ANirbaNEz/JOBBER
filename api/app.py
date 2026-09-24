@@ -363,7 +363,9 @@ def analyze_resume():
             resume_data = analyzer.process_file(tmp_path)
 
             if not resume_data:
-                return jsonify({"error": "Could not analyze resume. Try a different format or clearer document."}), 400
+                return jsonify({"error": "Could not extract any information from this file. Please check it contains readable text (not a scanned image) and try again."}), 400
+
+            extraction_method = resume_data.pop('_extraction_method', 'ai')
 
             # Save to master_resume.json
             resume_path = Path(config.master_resume_path)
@@ -374,12 +376,14 @@ def analyze_resume():
             global master_resume
             master_resume = load_master_resume(str(resume_path))
 
-            logger.info(f"Resume analyzed and saved: {resume_data.get('name')}")
+            logger.info(f"Resume analyzed and saved: {resume_data.get('name')} (method: {extraction_method})")
             return jsonify({
                 "status": "success",
                 "name": resume_data.get('name'),
                 "email": resume_data.get('email'),
-                "skills_count": len(resume_data.get('skills', []))
+                "skills_count": len(resume_data.get('skills', [])),
+                "extraction_method": extraction_method,
+                "warning": "AI analysis was unavailable (quota/API issue) — used basic text extraction instead. Skills and summary may be less complete. Review and edit if needed." if extraction_method == "local_fallback" else None
             })
 
         finally:
