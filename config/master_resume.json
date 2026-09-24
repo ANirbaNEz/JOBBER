@@ -1,39 +1,46 @@
 {
-  "name": "John Smith",
-  "email": "john.smith@email.com",
-  "phone": "+1-555-0123",
-  "summary": "Senior Software Engineer with 6+ years of experience building scalable backend systems and leading cross-functional teams.",
+  "name": "Anirban Dipaloke Pramanik",
+  "email": "anirbanpramanik261@gmail.com",
+  "phone": "7595984700",
+  "summary": "CS grad with hands-on production experience at an early-stage startup \u2014 exercised complete ownership across the full SDLC, from client consultation to deployment. Skilled across full-stack development, database administration, and QA. Seeking to bring this cross-functional engineering background to a collaborative, large-scale team.",
   "skills": [
+    "Java",
     "Python",
-    "FastAPI",
-    "PostgreSQL",
+    "PHP",
+    "JavaScript (ES6+)",
+    "TypeScript",
+    "C",
+    "React.js",
+    "HTML5",
+    "CSS3",
+    "Tailwind",
+    "Nginx",
+    "MySQL",
+    "MongoDB Atlas",
+    "SQLite",
+    "Node.js",
+    "Express.js",
     "REST APIs",
-    "Docker",
-    "Kubernetes",
+    "JWT",
+    "ACLs",
     "Git",
-    "System Design",
-    "AWS",
-    "Agile"
+    "GitHub",
+    "Docker",
+    "Docker Compose"
   ],
   "experience": [
     {
-      "title": "Senior Software Engineer",
-      "company": "Tech Corp",
-      "duration": "2021-Present",
-      "description": "Led architecture and development of microservices platform. Mentored team of engineers. Reduced API latency by 40%."
-    },
-    {
-      "title": "Software Engineer",
-      "company": "StartUp Inc",
-      "duration": "2019-2021",
-      "description": "Built REST APIs and database schemas. Implemented CI/CD pipelines. Optimized database queries for performance."
+      "title": "Programmer Analyst",
+      "company": "Miel Consultancy ProgramX",
+      "duration": "MAR 2026 \u2013 PRESENT",
+      "description": "Collaborated directly with stakeholders to define system requirements and resolve feature conflicts. Exercised complete ownership across the full SDLC, managing feature development, QA bug resolution, database administration, and deployment. Built F&B and Store modules in PHP and JavaScript including real-time POS autocomplete, kitchen indents, and payment APIs. Designed SQL reporting for analytics and automated billing using Python batch scripts and stored procedures. Built the RBAC admin panel frontend."
     }
   ],
   "education": [
     {
-      "degree": "Bachelor of Science in Computer Science",
-      "school": "State University",
-      "year": "2019"
+      "degree": "B.Tech \u2014 Computer Science & Engineering",
+      "school": "Heritage Institute of Technology",
+      "year": "2025"
     }
   ]
 }
