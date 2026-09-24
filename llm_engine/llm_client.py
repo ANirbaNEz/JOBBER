@@ -9,7 +9,20 @@ class GeminiClient:
     def __init__(self, api_key: str):
         self.api_key = api_key
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel("gemini-1.5-flash")
+        # Try different models in order of preference
+        try:
+            self.model = genai.GenerativeModel("gemini-2.0-flash")
+            logger.info("Using gemini-2.0-flash model")
+        except:
+            try:
+                self.model = genai.GenerativeModel("gemini-1.5-pro")
+                logger.info("Using gemini-1.5-pro model")
+            except:
+                try:
+                    self.model = genai.GenerativeModel("gemini-pro")
+                    logger.info("Using gemini-pro model")
+                except:
+                    raise Exception("No available Gemini models found")
 
     def generate(self, prompt: str, max_tokens: int = 2048) -> Optional[str]:
         """Generate text using Gemini API."""

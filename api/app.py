@@ -12,6 +12,7 @@ from scraper.mock_scraper import MockScraper
 from scraper.naukri_scraper import NaukriScraper
 from scraper.internshala_scraper import InternShalaScraper
 from llm_engine.mock_llm import MockLLM
+from llm_engine.llm_client import GeminiClient
 from llm_engine.resume_tailor import ResumeTailor
 from llm_engine.cover_letter_generator import CoverLetterGenerator
 from llm_engine.qa_generator import QAGenerator
@@ -343,8 +344,19 @@ def analyze_resume():
             tmp_path = tmp.name
 
         try:
-            # Use LLM for analysis
-            llm = MockLLM()
+            # Try real Gemini API first, fallback to mock if API key missing
+            api_key = os.getenv('GEMINI_API_KEY')
+            if api_key:
+                try:
+                    llm = GeminiClient(api_key)
+                    logger.info("Using Gemini API for resume analysis")
+                except Exception as e:
+                    logger.warning(f"Gemini API failed: {str(e)}, falling back to mock")
+                    llm = MockLLM()
+            else:
+                logger.warning("No GEMINI_API_KEY found, using mock LLM")
+                llm = MockLLM()
+
             analyzer = ResumeAnalyzer(llm)
 
             # Process file
